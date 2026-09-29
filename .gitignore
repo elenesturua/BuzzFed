@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files.
+# Vite does not ignore .env by default, so these rules are required.
+# .env.example is the only env file we commit. It contains empty placeholders.
+.env
+.env.*
+.env*
+*.env
+!.env.example
