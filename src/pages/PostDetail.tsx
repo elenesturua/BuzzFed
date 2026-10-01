@@ -4,6 +4,24 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { PLACEHOLDER_FEED } from '../data/placeholderFeed';
 import { CATEGORY_LABELS, QUANTITY_LABELS, STATUS_LABELS, DIETARY_TAG_LABELS } from '../types';
 
+function formatTimeLeft(iso: string): string {
+  const diffMs = new Date(iso).getTime() - Date.now();
+  const mins = Math.round(diffMs / 60_000);
+  if (mins <= 0) return 'Expired';
+  if (mins < 60) return `${mins} min left`;
+  const hours = Math.floor(mins / 60);
+  const rem = mins % 60;
+  return rem === 0 ? `${hours}h left` : `${hours}h ${rem}m left`;
+}
+
+function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString([], {
+    weekday: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 function PostDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -34,6 +52,10 @@ function PostDetail() {
           <Typography>
             <strong>Quantity:</strong> {QUANTITY_LABELS[post.quantity]}
           </Typography>
+          <Typography>
+            <strong>Available until:</strong> {formatDateTime(post.expires_at)} (
+            {formatTimeLeft(post.expires_at)})
+          </Typography>
           {post.dietary_tags.length > 0 && (
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
               {post.dietary_tags.map((tag) => (
@@ -42,7 +64,20 @@ function PostDetail() {
             </Box>
           )}
           {post.event && (
-            <Typography color="text.secondary">From event: {post.event.name}</Typography>
+            <Box sx={{ mt: 1 }}>
+              <Typography sx={{ fontWeight: 600 }}>Event</Typography>
+              <Typography color="text.secondary">
+                {post.event.name}
+                {post.event.host_org ? ` · ${post.event.host_org}` : ''}
+              </Typography>
+              <Typography color="text.secondary">
+                {post.event.building}
+                {post.event.room ? `, Room ${post.event.room}` : ''}
+              </Typography>
+              <Typography color="text.secondary">
+                {formatDateTime(post.event.starts_at)} – {formatDateTime(post.event.ends_at)}
+              </Typography>
+            </Box>
           )}
         </Box>
       )}
