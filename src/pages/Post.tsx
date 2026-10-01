@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Container, Typography, Box, TextField, MenuItem, Button, Chip } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { renderTimeViewClock } from '@mui/x-date-pickers/timeViewRenderers';
+import dayjs, { Dayjs } from 'dayjs';
 import {
   CATEGORIES,
   CATEGORY_LABELS,
@@ -11,6 +14,14 @@ import {
   DEFAULT_POST_DURATION_HOURS,
 } from '../types';
 import type { FoodCategory, QuantityLevel, DietaryTag, NewFoodPost } from '../types';
+
+const DURATION_OPTIONS = [
+  { value: 0.5, label: '30 minutes' },
+  { value: 1, label: '1 hour' },
+  { value: 2, label: '2 hours' },
+  { value: DEFAULT_POST_DURATION_HOURS, label: '3 hours' },
+  { value: 6, label: '6 hours' },
+] as const;
 
 function Post() {
   const navigate = useNavigate();
@@ -23,8 +34,21 @@ function Post() {
   const [locationDetails, setLocationDetails] = useState('');
   const [dietaryTags, setDietaryTags] = useState<DietaryTag[]>([]);
 
+  const [durationMode, setDurationMode] = useState<string>(String(DEFAULT_POST_DURATION_HOURS));
+  const [customEnd, setCustomEnd] = useState<Dayjs | null>(
+    dayjs().add(DEFAULT_POST_DURATION_HOURS, 'hour'),
+  );
+
   function toggleTag(tag: DietaryTag) {
     setDietaryTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+  }
+
+  function computeExpiresAt(): string {
+    if (durationMode === 'custom') {
+      return customEnd!.toISOString();
+    }
+    const hours = Number(durationMode);
+    return new Date(Date.now() + hours * 3600_000).toISOString();
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -42,14 +66,17 @@ function Post() {
       photo_url: null,
       event_id: null,
       ai_suggested: false,
-      expires_at: new Date(Date.now() + DEFAULT_POST_DURATION_HOURS * 3600_000).toISOString(),
+      expires_at: computeExpiresAt(),
     };
-    // TODO: send to Supabase. For now just log and return to the feed.
     console.log('New food post', newPost);
     navigate('/feed');
   }
 
-  const canSubmit = title.trim() !== '' && building.trim() !== '';
+  const customEndValid =
+    durationMode !== 'custom' ||
+    (customEnd !== null && customEnd.isValid() && customEnd.isAfter(dayjs()));
+
+  const canSubmit = title.trim() !== '' && building.trim() !== '' && customEndValid;
 
   return (
     <Container maxWidth="sm" sx={{ py: 2 }}>
@@ -111,6 +138,41 @@ function Post() {
           value={locationDetails}
           onChange={(e) => setLocationDetails(e.target.value)}
         />
+
+        <TextField
+          label="Available for"
+          select
+          value={durationMode}
+          onChange={(e) => setDurationMode(e.target.value)}
+          helperText="How long the food should stay listed"
+        >
+          {DURATION_OPTIONS.map((opt) => (
+            <MenuItem key={opt.value} value={String(opt.value)}>
+              {opt.label}
+            </MenuItem>
+          ))}
+          <MenuItem value="custom">Custom end time…</MenuItem>
+        </TextField>
+
+        {durationMode === 'custom' && (
+          <DateTimePicker
+            label="Ends at"
+            value={customEnd}
+            onChange={(value) => setCustomEnd(value)}
+            disablePast
+            viewRenderers={{
+              hours: renderTimeViewClock,
+              minutes: renderTimeViewClock,
+              seconds: renderTimeViewClock,
+            }}
+            slotProps={{
+              textField: {
+                error: !customEndValid,
+                helperText: !customEndValid ? 'Pick a time in the future' : undefined,
+              },
+            }}
+          />
+        )}
 
         <Box>
           <Typography variant="subtitle2" sx={{ mb: 1 }}>
