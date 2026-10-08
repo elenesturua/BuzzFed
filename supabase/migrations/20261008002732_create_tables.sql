@@ -47,3 +47,45 @@ create table food_posts(
   created_by uuid not null default auth.uid() references profiles(id) on delete cascade,
   created_at timestamptz not null default now() check (created_at <= expires_at)
 );
+
+alter table profiles enable row level security;
+alter table events enable row level security;
+alter table food_posts enable row level security;
+
+create policy "only self can read profile"
+  on profiles for select to authenticated using (id = auth.uid());
+
+create policy "only self can insert profile"
+  on profiles for insert to authenticated with check (id = auth.uid());
+
+create policy "only self can update profile"
+  on profiles for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
+
+create policy "no one can delete profile"
+  on profiles for delete to authenticated using (false);
+
+create policy "any logged in user can read events"
+  on events for select to authenticated using (true);
+
+create policy "only creator can insert event"
+  on events for insert to authenticated with check (created_by = auth.uid());
+
+create policy "only creator can update event"
+  on events for update to authenticated using (created_by = auth.uid()) with check (created_by = auth.uid());
+
+create policy "only creator can delete event"
+  on events for delete to authenticated using (created_by = auth.uid());
+
+create policy "any logged in user can read food posts"
+  on food_posts for select to authenticated using (true);
+
+create policy "only creator can insert food post"
+  on food_posts for insert to authenticated with check (created_by = auth.uid());
+
+revoke update on food_posts from authenticated;
+grant update (status, quantity) on food_posts to authenticated;
+create policy "only any logged in user can update food post status and quantity"
+  on food_posts for update to authenticated using (true) with check (true);
+
+create policy "only creator can delete food post"
+  on food_posts for delete to authenticated using (created_by = auth.uid());
