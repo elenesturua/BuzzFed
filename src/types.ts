@@ -1,6 +1,5 @@
 // Shared data contract for BuzzFed: frontend pages, the Supabase database, and the Gemini
 
-
 // Food categories a post can have. Stored in food_posts.category.
 export const CATEGORIES = [
   'pizza',

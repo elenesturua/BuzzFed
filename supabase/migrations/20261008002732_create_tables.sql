@@ -84,7 +84,7 @@ create policy "only creator can insert food post"
 
 revoke update on food_posts from authenticated;
 grant update (status, quantity) on food_posts to authenticated;
-create policy "only any logged in user can update food post status and quantity"
+create policy "any logged in user can update food post status and quantity"
   on food_posts for update to authenticated using (true) with check (true);
 
 create policy "only creator can delete food post"
