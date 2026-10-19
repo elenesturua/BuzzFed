@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Container, Typography, Box, TextField, MenuItem, Button, Chip } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
@@ -34,6 +34,10 @@ function Post() {
   const [locationDetails, setLocationDetails] = useState('');
   const [dietaryTags, setDietaryTags] = useState<DietaryTag[]>([]);
 
+  //add photo feature
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
   const [durationMode, setDurationMode] = useState<string>(String(DEFAULT_POST_DURATION_HOURS));
   const [customEnd, setCustomEnd] = useState<Dayjs | null>(
     dayjs().add(DEFAULT_POST_DURATION_HOURS, 'hour'),
@@ -50,6 +54,39 @@ function Post() {
     const hours = Number(durationMode);
     return new Date(Date.now() + hours * 3600_000).toISOString();
   }
+
+  //add photo feature
+
+  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file.');
+      e.target.value = '';
+      return;
+    }
+
+    setPhoto(file);
+    e.target.value = '';
+  }
+
+  function removePhoto() {
+    setPhoto(null);
+  }
+
+  useEffect(() => {
+    if (!photo) {
+      setPhotoPreview(null);
+      return;
+    }
+
+    const url = URL.createObjectURL(photo);
+    setPhotoPreview(url);
+
+    return () => URL.revokeObjectURL(url);
+  }, [photo]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -138,6 +175,45 @@ function Post() {
           value={locationDetails}
           onChange={(e) => setLocationDetails(e.target.value)}
         />
+
+        {/* Photo upload */}
+        <Box>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Add a photo of your food
+          </Typography>
+
+          <Button variant="outlined" component="label">
+            Add Photo
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              hidden
+              onChange={handlePhotoChange}
+            />
+          </Button>
+
+          {/* Photo preview */}
+          {photoPreview && (
+            <Box sx={{ mt: 2 }}>
+              <Box
+                component="img"
+                src={photoPreview}
+                alt="Preview of food to be posted"
+                sx={{
+                  width: '100%',
+                  maxHeight: 300,
+                  objectFit: 'contain',
+                  borderRadius: 2,
+                }}
+              />
+
+              <Button color="error" onClick={removePhoto} sx={{ mt: 1 }}>
+                Remove Photo
+              </Button>
+            </Box>
+          )}
+        </Box>
 
         <TextField
           label="Available for"
