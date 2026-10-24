@@ -113,10 +113,7 @@ function Map() {
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const map = L.map(containerRef.current).setView(
-      [CAMPUS_CENTER.latitude, CAMPUS_CENTER.longitude],
-      15,
-    );
+    const map = L.map(containerRef.current);
     mapRef.current = map;
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -132,7 +129,48 @@ function Map() {
       markersRef.current[post.id] = marker;
     });
 
-    setTimeout(() => map.invalidateSize(), 0);
+    if (posts.length === 0) {
+      map.setView([CAMPUS_CENTER.latitude, CAMPUS_CENTER.longitude], 15);
+    } else {
+      const markerBounds = L.latLngBounds(
+        posts.map((p) => [p.lat, p.lng] as [number, number]),
+      );
+
+      // Panning is allowed until only one marker stays on screen: extend the
+      // marker bounds by about one viewport span on each side. This is
+      // recomputed on every zoom so the allowance grows as you zoom out
+      // (otherwise a span measured at the fitted zoom feels too strict when
+      // zoomed further out).
+      const updateMaxBounds = () => {
+        const view = map.getBounds();
+        const latSpan = view.getNorth() - view.getSouth();
+        const lngSpan = view.getEast() - view.getWest();
+        map.setMaxBounds(
+          L.latLngBounds(
+            [markerBounds.getSouth() - latSpan, markerBounds.getWest() - lngSpan],
+            [markerBounds.getNorth() + latSpan, markerBounds.getEast() + lngSpan],
+          ),
+        );
+      };
+
+      const frameMarkers = () => {
+        // Clear maxBounds first so fitBounds isn't clamped by a prior pass.
+        map.setMaxBounds(undefined as unknown as L.LatLngBounds);
+        map.fitBounds(markerBounds, { padding: [48, 48], maxZoom: 17 });
+        map.setMinZoom(Math.max(map.getZoom() - 1, 14));
+        updateMaxBounds();
+      };
+
+      map.on('zoomend', updateMaxBounds);
+      frameMarkers();
+
+      // Recalculate size once the container has laid out, then re-frame so the
+      // bounds reflect the real dimensions.
+      setTimeout(() => {
+        map.invalidateSize();
+        frameMarkers();
+      }, 0);
+    }
 
     return () => {
       map.remove();
