@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Button, Chip, Divider } from '@mui/material';
+import { Box, Typography, Button } from '@mui/material';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { PLACEHOLDER_FEED } from '../data/placeholderFeed';
@@ -11,6 +11,25 @@ import {
   DIETARY_TAG_LABELS,
 } from '../types';
 import type { FoodPostWithEvent } from '../types';
+
+// Exact values pulled from the Figma Map design (node 4:639). The page is
+// white with soft-blue-outlined rounded cards; headings use Offside, body uses
+// Anaheim. Tiles stay on OpenStreetMap.
+const FIGMA = {
+  pageBg: '#ffffff',
+  cardBg: '#ffffff',
+  cardBorder: '#a5d8ff', // light blue card outline
+  buttonBg: '#f7f5fb', // lavender-white button / dietary tag
+  selectedBg: '#f0f7ff', // light blue for selected/hover rows
+  heading: '#4c5c68', // slate — section headings, titles, button (Offside)
+  ink: '#252525', // primary body text
+  muted: '#656565', // secondary text
+  marker: '#252525', // dark circular food markers
+  markerSelected: '#1976d2',
+  buttonShadow: '4px 4px 2px 0px rgba(76,92,104,0.5)',
+  bodyFont: "'Anaheim', sans-serif",
+  headFont: "'Offside', sans-serif",
+} as const;
 
 // A post that is shown on the map: active and has coordinates. The letter
 // (A, B, C, …) is assigned in list order and used on both the pin and the
@@ -36,8 +55,8 @@ function letterIcon(letter: string, selected: boolean): L.DivIcon {
     html: `<div style="
       width:26px;height:26px;border-radius:50%;
       display:flex;align-items:center;justify-content:center;
-      background:${selected ? '#1976d2' : '#252525'};color:#fff;
-      font-weight:700;font-size:14px;font-family:sans-serif;
+      background:${selected ? FIGMA.markerSelected : FIGMA.marker};color:#fff;
+      font-weight:600;font-size:14px;font-family:${FIGMA.bodyFont};
       border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.4);
     ">${letter}</div>`,
     iconSize: [26, 26],
@@ -74,6 +93,20 @@ function Map() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Record<string, L.Marker>>({});
+
+  // Load the Figma fonts (Anaheim for body, Offside for headings) on demand,
+  // scoped to this page so no shared file (index.html) is touched. Guarded so
+  // it is only injected once.
+  useEffect(() => {
+    const id = 'map-figma-fonts';
+    if (document.getElementById(id)) return;
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href =
+      'https://fonts.googleapis.com/css2?family=Anaheim&family=Offside&display=swap';
+    document.head.appendChild(link);
+  }, []);
 
   // Initialize the Leaflet map once. Markers start unselected; the styling
   // effect below immediately applies the current selection.
@@ -116,9 +149,19 @@ function Map() {
   }, [posts, selectedId]);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 56px)' }}>
-      <Typography variant="h6" sx={{ fontWeight: 700, px: 2, pt: 1.5, pb: 1 }}>
-        Free food on campus
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 'calc(100vh - 56px)',
+        bgcolor: FIGMA.pageBg,
+        fontFamily: FIGMA.bodyFont,
+      }}
+    >
+      <Typography
+        sx={{ fontFamily: FIGMA.headFont, fontSize: 28, color: FIGMA.heading, px: 2, pt: 1.5, pb: 1 }}
+      >
+        Food near campus
       </Typography>
 
       {/* Scaled-down map */}
@@ -130,10 +173,9 @@ function Map() {
             minHeight: 220,
             maxHeight: 340,
             width: '100%',
-            borderRadius: 2,
+            borderRadius: '15px',
             overflow: 'hidden',
-            border: '1px solid',
-            borderColor: 'divider',
+            border: `3px solid ${FIGMA.cardBorder}`,
             '& .leaflet-container': { height: '100%', width: '100%' },
           }}
         />
@@ -141,12 +183,12 @@ function Map() {
 
       {/* Info blurbs */}
       <Box sx={{ px: 2, py: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+        <Typography sx={{ fontFamily: FIGMA.headFont, fontSize: 18, color: FIGMA.heading }}>
           Markers · {posts.length} available {posts.length === 1 ? 'post' : 'posts'}
         </Typography>
 
         {/* Marker list */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
           {posts.map((p) => (
             <Box
               key={p.id}
@@ -165,18 +207,22 @@ function Map() {
                 gap: 1,
                 px: 1,
                 py: 0.5,
-                borderRadius: 1,
+                borderRadius: '6px',
                 cursor: 'pointer',
-                bgcolor: p.id === selectedId ? 'action.selected' : 'transparent',
-                '&:hover': { bgcolor: 'action.hover' },
+                bgcolor: p.id === selectedId ? FIGMA.selectedBg : 'transparent',
+                '&:hover': { bgcolor: FIGMA.selectedBg },
+                '&:focus-visible': { outline: `2px solid ${FIGMA.cardBorder}`, outlineOffset: 2 },
               }}
             >
-              <Typography component="span" sx={{ fontWeight: 700, minWidth: 16 }}>
+              <Box
+                component="span"
+                sx={{ fontFamily: FIGMA.bodyFont, fontWeight: 600, fontSize: 16, color: FIGMA.ink, minWidth: 16 }}
+              >
                 {p.letter}
-              </Typography>
-              <Typography component="span" variant="body2" color="text.secondary">
+              </Box>
+              <Box component="span" sx={{ fontFamily: FIGMA.bodyFont, fontSize: 16, color: FIGMA.ink }}>
                 {p.building} · {postSummary(p)}
-              </Typography>
+              </Box>
             </Box>
           ))}
         </Box>
@@ -185,62 +231,86 @@ function Map() {
         {selected && (
           <Box
             sx={{
-              border: '1px solid',
-              borderColor: 'divider',
-              borderRadius: 2,
-              p: 2,
+              bgcolor: FIGMA.cardBg,
+              border: `3px solid ${FIGMA.cardBorder}`,
+              borderRadius: '15px',
+              p: '14px',
               display: 'flex',
               flexDirection: 'column',
-              gap: 0.5,
+              gap: '8px',
             }}
           >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 1 }}>
-              <Typography variant="caption" color="text.secondary">
+              <Box component="span" sx={{ fontFamily: FIGMA.bodyFont, fontWeight: 600, fontSize: 16, color: FIGMA.muted }}>
                 {CATEGORY_LABELS[selected.category]}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
+              </Box>
+              <Box component="span" sx={{ fontFamily: FIGMA.bodyFont, fontWeight: 600, fontSize: 16, color: FIGMA.ink }}>
                 {timeLeft(selected.expires_at)} · until {untilTime(selected.expires_at)}
-              </Typography>
+              </Box>
             </Box>
 
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            <Box component="span" sx={{ fontFamily: FIGMA.headFont, fontSize: 17, color: FIGMA.heading }}>
               {selected.title}
-            </Typography>
+            </Box>
 
-            <Typography variant="body2" color="text.secondary">
+            <Box component="span" sx={{ fontFamily: FIGMA.bodyFont, fontSize: 16, color: FIGMA.ink }}>
               {selected.building}
               {selected.location_details ? ` · ${selected.location_details}` : ''}
-            </Typography>
+            </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mt: 0.5 }}>
-              <Typography variant="body2">{QUANTITY_LABELS[selected.quantity]}</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <Box component="span" sx={{ fontFamily: FIGMA.bodyFont, fontSize: 16, color: FIGMA.ink }}>
+                {QUANTITY_LABELS[selected.quantity]}
+              </Box>
               {selected.dietary_tags.map((tag) => (
-                <Chip key={tag} size="small" label={DIETARY_TAG_LABELS[tag]} />
+                <Box
+                  key={tag}
+                  component="span"
+                  sx={{
+                    fontFamily: FIGMA.bodyFont,
+                    fontSize: 16,
+                    color: FIGMA.muted,
+                    bgcolor: FIGMA.buttonBg,
+                    px: '6px',
+                    py: '3px',
+                    borderRadius: '3px',
+                  }}
+                >
+                  {DIETARY_TAG_LABELS[tag]}
+                </Box>
               ))}
             </Box>
 
             {selected.event && (
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              <Box component="span" sx={{ fontFamily: FIGMA.bodyFont, fontSize: 16, color: FIGMA.muted }}>
                 Event: {selected.event.name} →
-              </Typography>
+              </Box>
             )}
           </Box>
         )}
 
         {/* Primary action */}
         <Button
-          variant="outlined"
           fullWidth
           disabled={!selected}
           onClick={() => selected && navigate(`/post/${selected.id}`)}
+          disableElevation
+          sx={{
+            fontFamily: FIGMA.headFont,
+            textTransform: 'none',
+            fontSize: 16,
+            color: FIGMA.heading,
+            bgcolor: FIGMA.buttonBg,
+            border: `4px solid ${FIGMA.cardBorder}`,
+            borderRadius: '6px',
+            minHeight: 44,
+            boxShadow: FIGMA.buttonShadow,
+            '&:hover': { bgcolor: FIGMA.buttonBg, boxShadow: FIGMA.buttonShadow },
+            '&.Mui-disabled': { color: FIGMA.muted, bgcolor: FIGMA.buttonBg, boxShadow: 'none' },
+          }}
         >
           View selected food
         </Button>
-
-        <Divider sx={{ mt: 0.5 }} />
-        <Typography variant="caption" color="text.secondary">
-          Future path: Feed → Map → Marker → Food detail. No geolocation or directions implemented.
-        </Typography>
       </Box>
     </Box>
   );
