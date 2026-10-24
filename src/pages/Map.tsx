@@ -83,12 +83,27 @@ function postSummary(p: MapPost): string {
   return `${CATEGORY_LABELS[p.category]} · ${QUANTITY_LABELS[p.quantity]}`;
 }
 
+// Remembers the last-selected marker across navigation (e.g. viewing a post
+// and pressing back) for the lifetime of the browser tab.
+const SELECTED_KEY = 'map.selectedPostId';
+
 function Map() {
   const navigate = useNavigate();
   const posts = useMemo(() => buildMapPosts(), []);
 
-  const [selectedId, setSelectedId] = useState<string | null>(posts[0]?.id ?? null);
+  // Restore the previously selected marker if it still exists, otherwise fall
+  // back to the first post.
+  const [selectedId, setSelectedId] = useState<string | null>(() => {
+    const saved = sessionStorage.getItem(SELECTED_KEY);
+    if (saved && posts.some((p) => p.id === saved)) return saved;
+    return posts[0]?.id ?? null;
+  });
   const selected = posts.find((p) => p.id === selectedId) ?? null;
+
+  // Persist the selection so it survives leaving and returning to this page.
+  useEffect(() => {
+    if (selectedId) sessionStorage.setItem(SELECTED_KEY, selectedId);
+  }, [selectedId]);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
