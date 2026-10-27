@@ -1,4 +1,5 @@
 import type { FoodPostWithEvent } from '../types';
+import { BUILDINGS_BY_NAME } from './buildings';
 
 // tmp mock
 export const PLACEHOLDER_FEED: FoodPostWithEvent[] = [
@@ -11,8 +12,8 @@ export const PLACEHOLDER_FEED: FoodPostWithEvent[] = [
     quantity: 'lots',
     building: 'Klaus Advanced Computing',
     location_details: 'Atrium, 1st floor',
-    latitude: null,
-    longitude: null,
+    latitude: BUILDINGS_BY_NAME['Klaus Advanced Computing'].latitude,
+    longitude: BUILDINGS_BY_NAME['Klaus Advanced Computing'].longitude,
     photo_url: null,
     event_id: 'e1',
     status: 'available',
@@ -41,8 +42,8 @@ export const PLACEHOLDER_FEED: FoodPostWithEvent[] = [
     quantity: 'some',
     building: 'Clough Undergraduate Commons',
     location_details: '2nd floor near the stairs',
-    latitude: null,
-    longitude: null,
+    latitude: BUILDINGS_BY_NAME['Clough Undergraduate Commons'].latitude,
+    longitude: BUILDINGS_BY_NAME['Clough Undergraduate Commons'].longitude,
     photo_url: null,
     event_id: null,
     status: 'running_low',
@@ -61,8 +62,8 @@ export const PLACEHOLDER_FEED: FoodPostWithEvent[] = [
     quantity: 'a_little',
     building: 'Student Center',
     location_details: 'Ballroom entrance',
-    latitude: null,
-    longitude: null,
+    latitude: BUILDINGS_BY_NAME['Student Center'].latitude,
+    longitude: BUILDINGS_BY_NAME['Student Center'].longitude,
     photo_url: null,
     event_id: null,
     status: 'available',
@@ -81,8 +82,8 @@ export const PLACEHOLDER_FEED: FoodPostWithEvent[] = [
     quantity: 'lots',
     building: 'Instructional Center',
     location_details: 'Room 103',
-    latitude: null,
-    longitude: null,
+    latitude: BUILDINGS_BY_NAME['Instructional Center'].latitude,
+    longitude: BUILDINGS_BY_NAME['Instructional Center'].longitude,
     photo_url: null,
     event_id: null,
     status: 'available',
