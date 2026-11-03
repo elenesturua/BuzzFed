@@ -18,8 +18,8 @@ function App() {
   return (
     <Box sx={{ pb: showNav ? 7 : 0 }}>
       <Routes>
-        <Route path="/" element={<Navigate to={isLoggedIn ? '/feed' : '/login'} replace />}/>
-        <Route path="/login" element={isLoggedIn ? <Navigate to="/feed" replace /> : <Login />}/>
+        <Route path="/" element={<Navigate to={isLoggedIn ? '/feed' : '/login'} replace />} />
+        <Route path="/login" element={isLoggedIn ? <Navigate to="/feed" replace /> : <Login />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/feed" element={<Feed />} />
           <Route path="/post" element={<Post />} />

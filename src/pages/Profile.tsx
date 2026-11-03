@@ -47,10 +47,10 @@ function Profile() {
     });
   }
 
-function handleSignOut() {
-  signOut();
-  navigate('/login', { replace: true });
-}
+  function handleSignOut() {
+    signOut();
+    navigate('/login', { replace: true });
+  }
 
   return (
     <Container maxWidth="sm" sx={{ py: 2 }}>
@@ -125,12 +125,7 @@ function handleSignOut() {
         </Button>
         <Divider />
 
-        <Button
-          variant="outlined"
-          color="error"
-          onClick={handleSignOut}
-          fullWidth
-        >
+        <Button variant="outlined" color="error" onClick={handleSignOut} fullWidth>
           Sign out
         </Button>
       </Box>

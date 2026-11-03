@@ -1,30 +1,24 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Alert, Container } from '@mui/material';
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Container } from "@mui/material";
+import EmailStep from '../components/login/EmailStep';
+import CodeStep from '../components/login/CodeStep';
 
-import EmailStep from "../components/login/EmailLogin";
-import CodeStep from "../components/login/CodeLogin";
-
-import {
-  sendLoginCode,
-  verifyLoginCode,
-} from "../lib/auth";
+import { sendLoginCode, verifyLoginCode } from '../lib/auth';
 
 export default function Login() {
   const [email, setEmail] = useState<string | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   async function handleEmailSubmit(newEmail: string) {
     try {
-      setError("");
+      setError('');
       await sendLoginCode(newEmail);
       setEmail(newEmail);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not send code."
-      );
+      setError(err instanceof Error ? err.message : 'Could not send code.');
     }
   }
 
@@ -32,7 +26,7 @@ export default function Login() {
     if (!email) return;
 
     await verifyLoginCode(email, code);
-    navigate("/feed", { replace: true });
+    navigate('/feed', { replace: true });
   }
 
   async function handleResend() {
@@ -53,7 +47,7 @@ export default function Login() {
         />
       )}
 
-      {error && <p role="alert">{error}</p>}
+      {error && <Alert severity="error">{error}</Alert>}
     </Container>
   );
 }
