@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'mock-auth-user';
+import { requireSupabase, supabase } from './supabase';
 
 export type AuthUser = {
   email: string;
@@ -15,34 +15,49 @@ function normalizeEmail(email: string): string {
 }
 
 export async function sendLoginCode(email: string): Promise<void> {
-  normalizeEmail(email);
-  // Fake code sending: no email is actually sent.
+  const { error } = await requireSupabase().auth.signInWithOtp({
+    email: normalizeEmail(email),
+    options: { shouldCreateUser: true },
+  });
+
+  if (error) {
+    throw new Error(
+      error.status === 429
+        ? 'Too many requests. Please wait before requesting another code.'
+        : 'Could not send login code. Please try again.',
+    );
+  }
 }
 
 export async function verifyLoginCode(email: string, code: string): Promise<void> {
-  const normalized = normalizeEmail(email);
-
-  if (code !== '123456') {
-    throw new Error('Incorrect verification code.');
+  const token = code.trim();
+  if (!/^\d{6}$/.test(token)) {
+    throw new Error('Please enter a 6-digit code.');
   }
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ email: normalized }));
+  const { data, error } = await requireSupabase().auth.verifyOtp({
+    email: normalizeEmail(email),
+    token,
+    type: 'email',
+  });
+
+  if (error || !data.session) {
+    throw new Error('Could not verify code. It may be incorrect or expired. Please try again.');
+  }
 }
 
-// Async so Aadit's real Supabase version can keep the same function names.
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (!saved) return null;
+  if (!supabase) return null;
 
-  try {
-    const parsed = JSON.parse(saved) as AuthUser;
-    if (typeof parsed?.email !== 'string') return null;
-    return parsed;
-  } catch {
-    return null;
-  }
+  const { data, error } = await supabase.auth.getSession();
+  const email = data.session?.user.email;
+  if (error || !email) return null;
+  return { email };
 }
 
 export async function signOut(): Promise<void> {
-  localStorage.removeItem(STORAGE_KEY);
+  const { error } = await requireSupabase().auth.signOut();
+  if (error) {
+    throw new Error('Could not sign out. Please try again.');
+  }
 }

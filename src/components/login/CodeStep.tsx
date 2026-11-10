@@ -88,9 +88,6 @@ export default function CodeStep({ email, onVerify, onResend, onBack }: CodeStep
         helperText={error}
         fullWidth
       />
-      <Typography variant="body2" color="text.secondary">
-        For testing, use verification code: 123456
-      </Typography>
 
       <Button variant="contained" type="submit" disabled={loading || code.length !== 6}>
         Verify and log in

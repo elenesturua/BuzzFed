@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { AuthUser } from './auth';
 import { getCurrentUser } from './auth';
+import { supabase } from './supabase';
 
 type AuthContextValue = {
   user: AuthUser | null;
@@ -30,8 +31,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!cancelled) setLoading(false);
       });
 
+    const subscription = supabase
+      ? supabase.auth.onAuthStateChange((_event, session) => {
+          if (cancelled) return;
+          const email = session?.user.email;
+          setUser(email ? { email } : null);
+        }).data.subscription
+      : null;
+
     return () => {
       cancelled = true;
+      subscription?.unsubscribe();
     };
   }, []);
 
