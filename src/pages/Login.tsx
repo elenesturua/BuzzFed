@@ -1,31 +1,28 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Container } from '@mui/material';
+import { Container } from '@mui/material';
 
 import EmailStep from '../components/login/EmailStep';
 import CodeStep from '../components/login/CodeStep';
 
 import { sendLoginCode, verifyLoginCode } from '../lib/auth';
+import { useAuth } from '../lib/AuthContext';
 
 export default function Login() {
   const [email, setEmail] = useState<string | null>(null);
-  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { refresh } = useAuth();
 
   async function handleEmailSubmit(newEmail: string) {
-    try {
-      setError('');
-      await sendLoginCode(newEmail);
-      setEmail(newEmail);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not send code.');
-    }
+    await sendLoginCode(newEmail);
+    setEmail(newEmail);
   }
 
   async function handleVerify(code: string) {
     if (!email) return;
 
     await verifyLoginCode(email, code);
+    await refresh();
     navigate('/feed', { replace: true });
   }
 
@@ -46,8 +43,6 @@ export default function Login() {
           onBack={() => setEmail(null)}
         />
       )}
-
-      {error && <Alert severity="error">{error}</Alert>}
     </Container>
   );
 }

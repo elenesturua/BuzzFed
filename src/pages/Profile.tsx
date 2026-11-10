@@ -15,6 +15,7 @@ import type { FoodCategory, DietaryTag } from '../types';
 import { PLACEHOLDER_PROFILE } from '../data/placeholderProfile';
 import { useNavigate } from 'react-router-dom';
 import { signOut } from '../lib/auth';
+import { useAuth } from '../lib/AuthContext';
 
 function Profile() {
   const [displayName, setDisplayName] = useState(PLACEHOLDER_PROFILE.display_name ?? '');
@@ -28,6 +29,7 @@ function Profile() {
     PLACEHOLDER_PROFILE.notify_dietary_tags,
   );
   const navigate = useNavigate();
+  const { user, refresh } = useAuth();
 
   function toggleCategory(c: FoodCategory) {
     setNotifyCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
@@ -47,8 +49,9 @@ function Profile() {
     });
   }
 
-  function handleSignOut() {
-    signOut();
+  async function handleSignOut() {
+    await signOut();
+    await refresh();
     navigate('/login', { replace: true });
   }
 
@@ -61,7 +64,7 @@ function Profile() {
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <TextField
           label="Email"
-          value={PLACEHOLDER_PROFILE.email}
+          value={user?.email ?? PLACEHOLDER_PROFILE.email}
           disabled
           helperText="Your @gatech.edu account"
         />

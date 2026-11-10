@@ -72,6 +72,7 @@ export default function CodeStep({ email, onVerify, onResend, onBack }: CodeStep
       <TextField
         label="Verification code"
         autoComplete="one-time-code"
+        autoFocus
         value={code}
         onChange={(e) => {
           setCode(e.target.value.replace(/\D/g, '').slice(0, 6));
@@ -91,7 +92,7 @@ export default function CodeStep({ email, onVerify, onResend, onBack }: CodeStep
         For testing, use verification code: 123456
       </Typography>
 
-      <Button variant="contained" type="submit" disabled={loading}>
+      <Button variant="contained" type="submit" disabled={loading || code.length !== 6}>
         Verify and log in
       </Button>
 

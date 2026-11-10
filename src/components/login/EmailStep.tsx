@@ -2,14 +2,15 @@ import { useState } from 'react';
 import { Box, Button, TextField, Typography } from '@mui/material';
 
 type EmailStepProps = {
-  onSubmit: (email: string) => void;
+  onSubmit: (email: string) => Promise<void>;
 };
 
 export default function EmailStep({ onSubmit }: EmailStepProps) {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const trimmedEmail = email.trim();
     const isValid = /^[^\s@]+@gatech\.edu$/i.test(trimmedEmail);
 
@@ -19,7 +20,14 @@ export default function EmailStep({ onSubmit }: EmailStepProps) {
     }
 
     setError('');
-    onSubmit(trimmedEmail);
+    setLoading(true);
+    try {
+      await onSubmit(trimmedEmail);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not send code.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -27,7 +35,7 @@ export default function EmailStep({ onSubmit }: EmailStepProps) {
       component="form"
       onSubmit={(e) => {
         e.preventDefault();
-        handleSubmit();
+        void handleSubmit();
       }}
       sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
     >
@@ -39,6 +47,7 @@ export default function EmailStep({ onSubmit }: EmailStepProps) {
         label="Georgia Tech Email"
         type="email"
         autoComplete="email"
+        autoFocus
         value={email}
         onChange={(e) => {
           setEmail(e.target.value);
@@ -47,10 +56,11 @@ export default function EmailStep({ onSubmit }: EmailStepProps) {
         error={Boolean(error)}
         helperText={error}
         fullWidth
+        disabled={loading}
       />
 
-      <Button variant="contained" type="submit">
-        Send login code
+      <Button variant="contained" type="submit" disabled={loading}>
+        {loading ? 'Sending code…' : 'Send login code'}
       </Button>
     </Box>
   );

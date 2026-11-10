@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { Box } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 import BottomNav from './components/BottomNav';
 import Login from './pages/Login';
 import Feed from './pages/Feed';
@@ -8,12 +8,21 @@ import PostDetail from './pages/PostDetail';
 import Map from './pages/Map';
 import Profile from './pages/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
-import { getCurrentUser } from './lib/auth';
+import { useAuth } from './lib/AuthContext';
 
 function App() {
   const location = useLocation();
-  const isLoggedIn = getCurrentUser() !== null;
+  const { user, loading } = useAuth();
+  const isLoggedIn = user !== null;
   const showNav = isLoggedIn && location.pathname !== '/login';
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ pb: showNav ? 7 : 0 }}>
@@ -27,6 +36,7 @@ function App() {
           <Route path="/map" element={<Map />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
+        <Route path="*" element={<Navigate to={isLoggedIn ? '/feed' : '/login'} replace />} />
       </Routes>
       {showNav && <BottomNav />}
     </Box>
