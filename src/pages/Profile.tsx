@@ -13,6 +13,8 @@ import {
 import { CATEGORIES, CATEGORY_LABELS, DIETARY_TAGS, DIETARY_TAG_LABELS } from '../types';
 import type { FoodCategory, DietaryTag } from '../types';
 import { PLACEHOLDER_PROFILE } from '../data/placeholderProfile';
+import { useNavigate } from 'react-router-dom';
+import { signOut } from '../lib/auth';
 
 function Profile() {
   const [displayName, setDisplayName] = useState(PLACEHOLDER_PROFILE.display_name ?? '');
@@ -25,6 +27,7 @@ function Profile() {
   const [notifyTags, setNotifyTags] = useState<DietaryTag[]>(
     PLACEHOLDER_PROFILE.notify_dietary_tags,
   );
+  const navigate = useNavigate();
 
   function toggleCategory(c: FoodCategory) {
     setNotifyCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
@@ -42,6 +45,11 @@ function Profile() {
       notify_categories: notifyCategories,
       notify_dietary_tags: notifyTags,
     });
+  }
+
+  function handleSignOut() {
+    signOut();
+    navigate('/login', { replace: true });
   }
 
   return (
@@ -114,6 +122,11 @@ function Profile() {
 
         <Button variant="contained" onClick={handleSave}>
           Save changes
+        </Button>
+        <Divider />
+
+        <Button variant="outlined" color="error" onClick={handleSignOut} fullWidth>
+          Sign out
         </Button>
       </Box>
     </Container>
