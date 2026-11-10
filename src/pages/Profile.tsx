@@ -66,7 +66,7 @@ function Profile() {
           label="Email"
           value={user?.email ?? PLACEHOLDER_PROFILE.email}
           disabled
-          helperText="Your @gatech.edu account"
+          helperText="Your login email"
         />
         <TextField
           label="Display name"

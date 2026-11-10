@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Box, Button, TextField, Typography } from '@mui/material';
 
+import { isAllowedLoginEmail } from '../../lib/auth';
+
 type EmailStepProps = {
   onSubmit: (email: string) => Promise<void>;
 };
@@ -12,10 +14,9 @@ export default function EmailStep({ onSubmit }: EmailStepProps) {
 
   async function handleSubmit() {
     const trimmedEmail = email.trim();
-    const isValid = /^[^\s@]+@gatech\.edu$/i.test(trimmedEmail);
 
-    if (!isValid) {
-      setError('Please enter a valid @gatech.edu email.');
+    if (!isAllowedLoginEmail(trimmedEmail)) {
+      setError('Please enter a @gatech.edu or @gmail.com email.');
       return;
     }
 
@@ -41,10 +42,10 @@ export default function EmailStep({ onSubmit }: EmailStepProps) {
     >
       <Typography variant="h5">Log in</Typography>
 
-      <Typography>Enter your Georgia Tech email to continue.</Typography>
+      <Typography>Enter your Georgia Tech or Gmail address to continue.</Typography>
 
       <TextField
-        label="Georgia Tech Email"
+        label="Email"
         type="email"
         autoComplete="email"
         autoFocus

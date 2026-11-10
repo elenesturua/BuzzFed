@@ -4,12 +4,17 @@ export type AuthUser = {
   email: string;
 };
 
-const GATECH_EMAIL = /^[^\s@]+@gatech\.edu$/i;
+// @gmail.com is temporary so we can test while GT drops campus mail.
+export const LOGIN_EMAIL = /^[^\s@]+@(gatech\.edu|gmail\.com)$/i;
+
+export function isAllowedLoginEmail(email: string): boolean {
+  return LOGIN_EMAIL.test(email.trim());
+}
 
 function normalizeEmail(email: string): string {
   const normalized = email.trim().toLowerCase();
-  if (!GATECH_EMAIL.test(normalized)) {
-    throw new Error('Please use a @gatech.edu email.');
+  if (!LOGIN_EMAIL.test(normalized)) {
+    throw new Error('Please use a @gatech.edu or @gmail.com email.');
   }
   return normalized;
 }
