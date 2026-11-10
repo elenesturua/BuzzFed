@@ -14,6 +14,7 @@ import {
   DEFAULT_POST_DURATION_HOURS,
 } from '../types';
 import type { FoodCategory, QuantityLevel, DietaryTag, NewFoodPost } from '../types';
+import { BUILDINGS, BUILDINGS_BY_NAME } from '../data/buildings';
 
 const DURATION_OPTIONS = [
   { value: 0.5, label: '30 minutes' },
@@ -53,6 +54,7 @@ function Post() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const coords = BUILDINGS_BY_NAME[building];
     const newPost: NewFoodPost = {
       title,
       description: description || null,
@@ -61,8 +63,8 @@ function Post() {
       quantity,
       building,
       location_details: locationDetails || null,
-      latitude: null,
-      longitude: null,
+      latitude: coords?.latitude ?? null,
+      longitude: coords?.longitude ?? null,
       photo_url: null,
       event_id: null,
       ai_suggested: false,
@@ -128,10 +130,18 @@ function Post() {
         </TextField>
         <TextField
           label="Building"
+          select
           required
           value={building}
           onChange={(e) => setBuilding(e.target.value)}
-        />
+          helperText="Sets the pin location on the map"
+        >
+          {BUILDINGS.map((b) => (
+            <MenuItem key={b.name} value={b.name}>
+              {b.name}
+            </MenuItem>
+          ))}
+        </TextField>
         <TextField
           label="Location details"
           placeholder="e.g. 2nd floor near the stairs"
