@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
-import BottomNav from './components/BottomNav';
+import NavBar from './components/NavBar';
 import Login from './pages/Login';
 import Feed from './pages/Feed';
 import Post from './pages/Post';
@@ -25,7 +25,8 @@ function App() {
   }
 
   return (
-    <Box sx={{ pb: showNav ? 7 : 0 }}>
+    <Box sx={{ pt: showNav ? '76px' : 0 }}>
+      {showNav && <NavBar />}
       <Routes>
         <Route path="/" element={<Navigate to={isLoggedIn ? '/feed' : '/login'} replace />} />
         <Route path="/login" element={isLoggedIn ? <Navigate to="/feed" replace /> : <Login />} />
@@ -38,7 +39,6 @@ function App() {
         </Route>
         <Route path="*" element={<Navigate to={isLoggedIn ? '/feed' : '/login'} replace />} />
       </Routes>
-      {showNav && <BottomNav />}
     </Box>
   );
 }
