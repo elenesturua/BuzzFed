@@ -91,20 +91,6 @@ function Map() {
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Record<string, L.Marker>>({});
 
-  // Load the Figma fonts (Anaheim for body, Offside for headings) on demand,
-  // scoped to this page so no shared file (index.html) is touched. Guarded so
-  // it is only injected once.
-  useEffect(() => {
-    const id = 'map-figma-fonts';
-    if (document.getElementById(id)) return;
-    const link = document.createElement('link');
-    link.id = id;
-    link.rel = 'stylesheet';
-    link.href =
-      'https://fonts.googleapis.com/css2?family=Anaheim&family=Offside&display=swap';
-    document.head.appendChild(link);
-  }, []);
-
   // Initialize the Leaflet map once. Markers start unselected; the styling
   // effect below immediately applies the current selection.
   useEffect(() => {
