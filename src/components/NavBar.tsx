@@ -54,7 +54,6 @@ function NavBar() {
             <Typography
               component="span"
               sx={{
-                fontFamily: figma.headFont,
                 fontSize: 30,
                 lineHeight: 1,
                 whiteSpace: 'nowrap',
@@ -93,7 +92,6 @@ function NavBar() {
                   <Typography
                     component="span"
                     sx={{
-                      fontFamily: figma.bodyFont,
                       fontSize: 16,
                       lineHeight: 'normal',
                       whiteSpace: 'nowrap',

@@ -15,9 +15,11 @@ export const figma = {
   marker: '#252525', // dark circular food markers
   markerSelected: '#1976d2',
   buttonShadow: '4px 4px 2px 0px rgba(76,92,104,0.5)',
-  bodyFont: "'Anaheim', sans-serif",
-  headFont: "'Offside', sans-serif",
 } as const;
+
+//if ur trying to change fondts,
+//change here and the link in index.html
+export const fontStack = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 // Georgia Tech colors. Update when the style guide arrives.
 const theme = createTheme({
@@ -28,6 +30,9 @@ const theme = createTheme({
     secondary: {
       main: '#003057', // GT Navy Blue
     },
+  },
+  typography: {
+    fontFamily: fontStack,
   },
 });
 
