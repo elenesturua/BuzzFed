@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import PhotoPicker from '../components/PhotoPicker';
+import { uploadFoodPhoto } from '../data/photos';
 import { Container, Typography, Box, TextField, MenuItem, Button, Chip } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
@@ -33,10 +35,8 @@ function Post() {
   const [building, setBuilding] = useState('');
   const [locationDetails, setLocationDetails] = useState('');
   const [dietaryTags, setDietaryTags] = useState<DietaryTag[]>([]);
-
-  //add photo feature
+  // Store the photo selected in PhotoUpload.tsx
   const [photo, setPhoto] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const [durationMode, setDurationMode] = useState<string>(String(DEFAULT_POST_DURATION_HOURS));
   const [customEnd, setCustomEnd] = useState<Dayjs | null>(
@@ -55,58 +55,39 @@ function Post() {
     return new Date(Date.now() + hours * 3600_000).toISOString();
   }
 
-  //add photo feature
-
-  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file.');
-      e.target.value = '';
-      return;
-    }
-
-    setPhoto(file);
-    e.target.value = '';
-  }
-
-  function removePhoto() {
-    setPhoto(null);
-  }
-
-  useEffect(() => {
-    if (!photo) {
-      setPhotoPreview(null);
-      return;
-    }
-
-    const url = URL.createObjectURL(photo);
-    setPhotoPreview(url);
-
-    return () => URL.revokeObjectURL(url);
-  }, [photo]);
-
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const newPost: NewFoodPost = {
-      title,
-      description: description || null,
-      category,
-      dietary_tags: dietaryTags,
-      quantity,
-      building,
-      location_details: locationDetails || null,
-      latitude: null,
-      longitude: null,
-      photo_url: null,
-      event_id: null,
-      ai_suggested: false,
-      expires_at: computeExpiresAt(),
-    };
-    console.log('New food post', newPost);
-    navigate('/feed');
+
+    try {
+      let photoUrl: string | null = null;
+
+      // Upload the selected photo (currently mocked)
+      if (photo) {
+        photoUrl = await uploadFoodPhoto(photo);
+      }
+
+      const newPost: NewFoodPost = {
+        title,
+        description: description || null,
+        category,
+        dietary_tags: dietaryTags,
+        quantity,
+        building,
+        location_details: locationDetails || null,
+        latitude: null,
+        longitude: null,
+        photo_url: photoUrl,
+        event_id: null,
+        ai_suggested: false,
+        expires_at: computeExpiresAt(),
+      };
+
+      console.log('New food post:', newPost);
+
+      navigate('/feed');
+    } catch (error) {
+      console.error('Photo upload failed:', error);
+    }
   }
 
   const customEndValid =
@@ -176,44 +157,7 @@ function Post() {
           onChange={(e) => setLocationDetails(e.target.value)}
         />
 
-        {/* Photo upload */}
-        <Box>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>
-            Add a photo of your food
-          </Typography>
-
-          <Button variant="outlined" component="label">
-            Add Photo
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              hidden
-              onChange={handlePhotoChange}
-            />
-          </Button>
-
-          {/* Photo preview */}
-          {photoPreview && (
-            <Box sx={{ mt: 2 }}>
-              <Box
-                component="img"
-                src={photoPreview}
-                alt="Preview of food to be posted"
-                sx={{
-                  width: '100%',
-                  maxHeight: 300,
-                  objectFit: 'contain',
-                  borderRadius: 2,
-                }}
-              />
-
-              <Button color="error" onClick={removePhoto} sx={{ mt: 1 }}>
-                Remove Photo
-              </Button>
-            </Box>
-          )}
-        </Box>
+        <PhotoPicker onPhotoChange={setPhoto} />
 
         <TextField
           label="Available for"
