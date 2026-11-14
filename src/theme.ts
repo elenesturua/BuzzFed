@@ -1,6 +1,6 @@
 import { createTheme } from '@mui/material/styles';
 
-// Design tokens pulled from the Figma. 
+// Design tokens pulled from the Figma.
 export const figma = {
   pageBg: '#ffffff',
   cardBg: '#ffffff',
