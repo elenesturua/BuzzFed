@@ -45,6 +45,19 @@ export async function compressPhoto(file: File): Promise<File> {
   }
 }
 
+async function ensureProfile(userId: string, email: string | undefined): Promise<void> {
+  if (!email) return;
+  const client = requireSupabase();
+  const { data } = await client.from('profiles').select('id').eq('id', userId).maybeSingle();
+  if (data) return;
+
+  const { error } = await client.from('profiles').insert({ id: userId, email });
+  // Another tab / the auth trigger may have created it first.
+  if (error && error.code !== '23505') {
+    throw new Error('Could not set up your profile for photo upload. Please try signing out and back in.');
+  }
+}
+
 /**
  * Upload a compressed food photo to the food-photos bucket.
  * Returns a public URL suitable for food_posts.photo_url.
@@ -60,18 +73,29 @@ export async function uploadFoodPhoto(file: File): Promise<string> {
     throw new Error('Sign in to upload a photo.');
   }
 
+  await ensureProfile(user.id, user.email);
+
   const path = `${user.id}/${crypto.randomUUID()}.jpg`;
-  const { error: uploadError } = await client.storage.from(FOOD_PHOTOS_BUCKET).upload(path, file, {
+  const body = file.type === 'image/jpeg' ? file : new File([file], 'food-photo.jpg', { type: 'image/jpeg' });
+
+  const { error: uploadError } = await client.storage.from(FOOD_PHOTOS_BUCKET).upload(path, body, {
     contentType: 'image/jpeg',
+    cacheControl: '3600',
     upsert: false,
   });
 
   if (uploadError) {
-    throw new Error(
-      uploadError.message.includes('row-level security')
-        ? 'Could not upload photo. Make sure your profile exists, then try again.'
-        : 'Could not upload photo. Please try again.',
-    );
+    const detail = uploadError.message || 'unknown error';
+    if (/row-level security|policy/i.test(detail)) {
+      throw new Error('Could not upload photo (permission denied). Sign out, sign back in, and try again.');
+    }
+    if (/mime|type/i.test(detail)) {
+      throw new Error('That image type is not supported. Try a JPG or PNG.');
+    }
+    if (/size|payload|too large|maximum/i.test(detail)) {
+      throw new Error('That photo is too large. Try a smaller image.');
+    }
+    throw new Error(`Could not upload photo: ${detail}`);
   }
 
   const { data } = client.storage.from(FOOD_PHOTOS_BUCKET).getPublicUrl(path);
