@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { Container, Typography, Box, TextField, MenuItem, Button, Chip } from '@mui/material';
+import {
+  Container,
+  Typography,
+  Box,
+  TextField,
+  MenuItem,
+  Button,
+  Chip,
+  Alert,
+} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { renderTimeViewClock } from '@mui/x-date-pickers/timeViewRenderers';
@@ -15,6 +24,8 @@ import {
 } from '../types';
 import type { FoodCategory, QuantityLevel, DietaryTag, NewFoodPost } from '../types';
 import { BUILDINGS, BUILDINGS_BY_NAME } from '../data/buildings';
+import PhotoPicker from '../components/PhotoPicker';
+import { uploadFoodPhoto } from '../lib/photos';
 
 const DURATION_OPTIONS = [
   { value: 0.5, label: '30 minutes' },
@@ -34,6 +45,9 @@ function Post() {
   const [building, setBuilding] = useState('');
   const [locationDetails, setLocationDetails] = useState('');
   const [dietaryTags, setDietaryTags] = useState<DietaryTag[]>([]);
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const [durationMode, setDurationMode] = useState<string>(String(DEFAULT_POST_DURATION_HOURS));
   const [customEnd, setCustomEnd] = useState<Dayjs | null>(
@@ -45,40 +59,61 @@ function Post() {
   }
 
   function computeExpiresAt(): string {
+    // Matches food_posts_max_duration (created_at + 12 hours).
+    const maxMs = Date.now() + 12 * 3600_000;
+    let expiresMs: number;
     if (durationMode === 'custom') {
-      return customEnd!.toISOString();
+      expiresMs = customEnd!.valueOf();
+    } else {
+      expiresMs = Date.now() + Number(durationMode) * 3600_000;
     }
-    const hours = Number(durationMode);
-    return new Date(Date.now() + hours * 3600_000).toISOString();
+    return new Date(Math.min(expiresMs, maxMs)).toISOString();
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const coords = BUILDINGS_BY_NAME[building];
-    const newPost: NewFoodPost = {
-      title,
-      description: description || null,
-      category,
-      dietary_tags: dietaryTags,
-      quantity,
-      building,
-      location_details: locationDetails || null,
-      latitude: coords?.latitude ?? null,
-      longitude: coords?.longitude ?? null,
-      photo_url: null,
-      event_id: null,
-      ai_suggested: false,
-      expires_at: computeExpiresAt(),
-    };
-    console.log('New food post', newPost);
-    navigate('/feed');
+    setSubmitError(null);
+    setSubmitting(true);
+
+    try {
+      let photoUrl: string | null = null;
+      if (photo) {
+        photoUrl = await uploadFoodPhoto(photo);
+      }
+
+      const coords = BUILDINGS_BY_NAME[building];
+      const newPost: NewFoodPost = {
+        title,
+        description: description || null,
+        category,
+        dietary_tags: dietaryTags,
+        quantity,
+        building,
+        location_details: locationDetails || null,
+        latitude: coords?.latitude ?? null,
+        longitude: coords?.longitude ?? null,
+        photo_url: photoUrl,
+        event_id: null,
+        ai_suggested: false,
+        expires_at: computeExpiresAt(),
+      };
+
+      // Real insert lands with issue #8; keep the shaped payload for now.
+      console.log('New food post', newPost);
+      navigate('/feed');
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Could not post food. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const customEndValid =
     durationMode !== 'custom' ||
     (customEnd !== null && customEnd.isValid() && customEnd.isAfter(dayjs()));
 
-  const canSubmit = title.trim() !== '' && building.trim() !== '' && customEndValid;
+  const canSubmit =
+    title.trim() !== '' && building.trim() !== '' && customEndValid && !submitting;
 
   return (
     <Container maxWidth="sm" sx={{ py: 2 }}>
@@ -149,6 +184,8 @@ function Post() {
           onChange={(e) => setLocationDetails(e.target.value)}
         />
 
+        <PhotoPicker onPhotoChange={setPhoto} />
+
         <TextField
           label="Available for"
           select
@@ -201,8 +238,10 @@ function Post() {
           </Box>
         </Box>
 
+        {submitError && <Alert severity="error">{submitError}</Alert>}
+
         <Button type="submit" variant="contained" disabled={!canSubmit}>
-          Post food
+          {submitting ? 'Posting…' : 'Post food'}
         </Button>
       </Box>
     </Container>

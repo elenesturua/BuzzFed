@@ -3,6 +3,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PLACEHOLDER_FEED } from '../data/placeholderFeed';
 import { CATEGORY_LABELS, QUANTITY_LABELS, STATUS_LABELS, DIETARY_TAG_LABELS } from '../types';
+import FoodPhoto from '../components/FoodPhoto';
 
 function formatTimeLeft(iso: string): string {
   const diffMs = new Date(iso).getTime() - Date.now();
@@ -37,6 +38,7 @@ function PostDetail() {
         <Typography>Post not found.</Typography>
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <FoodPhoto photoUrl={post.photo_url} title={post.title} height={260} />
           <Typography variant="h5" sx={{ fontWeight: 700 }}>
             {post.title}
           </Typography>
