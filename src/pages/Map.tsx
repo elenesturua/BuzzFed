@@ -1,36 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Button } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, Typography } from '@mui/material';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { PLACEHOLDER_FEED } from '../data/placeholderFeed';
 import { CAMPUS_CENTER } from '../data/buildings';
-import {
-  CATEGORY_LABELS,
-  QUANTITY_LABELS,
-  DIETARY_TAG_LABELS,
-} from '../types';
+import { CATEGORY_LABELS, QUANTITY_LABELS, DIETARY_TAG_LABELS } from '../types';
 import type { FoodPostWithEvent } from '../types';
 import { figma, fontStack } from '../theme';
+import { useActivePosts } from '../hooks/useActivePosts';
 
-// A post that is shown on the map: active and has coordinates. The letter
-// (A, B, C, …) is assigned in list order and used on both the pin and the
-// marker list, matching the Figma design.
 type MapPost = FoodPostWithEvent & { letter: string; lat: number; lng: number };
 
-function buildMapPosts(): MapPost[] {
-  const active = PLACEHOLDER_FEED.filter(
-    (p) => p.status !== 'gone' && p.latitude !== null && p.longitude !== null,
-  );
+function toMapPosts(source: FoodPostWithEvent[]): MapPost[] {
+  const active = source.filter((p) => p.latitude !== null && p.longitude !== null);
   return active.map((p, i) => ({
     ...p,
-    letter: String.fromCharCode(65 + i), // A, B, C, …
+    letter: String.fromCharCode(65 + i),
     lat: p.latitude as number,
     lng: p.longitude as number,
   }));
 }
 
-// A dark circular lettered marker (matches the Figma available-food marker).
 function letterIcon(letter: string, selected: boolean): L.DivIcon {
   return L.divIcon({
     className: '',
@@ -60,29 +50,29 @@ function untilTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
-// Short summary used in the marker list, e.g. "Pizza · lots left".
 function postSummary(p: MapPost): string {
   return `${CATEGORY_LABELS[p.category]} · ${QUANTITY_LABELS[p.quantity]}`;
 }
 
-// Remembers the last-selected marker across navigation (e.g. viewing a post
-// and pressing back) for the lifetime of the browser tab.
 const SELECTED_KEY = 'map.selectedPostId';
 
 function Map() {
   const navigate = useNavigate();
-  const posts = useMemo(() => buildMapPosts(), []);
+  const { posts: feedPosts, loading, error } = useActivePosts();
+  const posts = useMemo(() => toMapPosts(feedPosts), [feedPosts]);
 
-  // Restore the previously selected marker if it still exists, otherwise fall
-  // back to the first post.
-  const [selectedId, setSelectedId] = useState<string | null>(() => {
-    const saved = sessionStorage.getItem(SELECTED_KEY);
-    if (saved && posts.some((p) => p.id === saved)) return saved;
-    return posts[0]?.id ?? null;
-  });
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = posts.find((p) => p.id === selectedId) ?? null;
 
-  // Persist the selection so it survives leaving and returning to this page.
+  useEffect(() => {
+    const saved = sessionStorage.getItem(SELECTED_KEY);
+    if (saved && posts.some((p) => p.id === saved)) {
+      setSelectedId(saved);
+      return;
+    }
+    setSelectedId(posts[0]?.id ?? null);
+  }, [posts]);
+
   useEffect(() => {
     if (selectedId) sessionStorage.setItem(SELECTED_KEY, selectedId);
   }, [selectedId]);
@@ -91,8 +81,6 @@ function Map() {
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Record<string, L.Marker>>({});
 
-  // Initialize the Leaflet map once. Markers start unselected; the styling
-  // effect below immediately applies the current selection.
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -104,69 +92,71 @@ function Map() {
       maxZoom: 19,
     }).addTo(map);
 
-    posts.forEach((post) => {
-      const marker = L.marker([post.lat, post.lng], {
-        icon: letterIcon(post.letter, false),
-      }).addTo(map);
-      marker.on('click', () => setSelectedId(post.id));
-      markersRef.current[post.id] = marker;
-    });
-
-    if (posts.length === 0) {
-      map.setView([CAMPUS_CENTER.latitude, CAMPUS_CENTER.longitude], 15);
-    } else {
-      const markerBounds = L.latLngBounds(
-        posts.map((p) => [p.lat, p.lng] as [number, number]),
-      );
-
-      // Panning is allowed until only one marker stays on screen: extend the
-      // marker bounds by about one viewport span on each side. This is
-      // recomputed on every zoom so the allowance grows as you zoom out
-      // (otherwise a span measured at the fitted zoom feels too strict when
-      // zoomed further out).
-      const updateMaxBounds = () => {
-        const view = map.getBounds();
-        const latSpan = view.getNorth() - view.getSouth();
-        const lngSpan = view.getEast() - view.getWest();
-        map.setMaxBounds(
-          L.latLngBounds(
-            [markerBounds.getSouth() - latSpan, markerBounds.getWest() - lngSpan],
-            [markerBounds.getNorth() + latSpan, markerBounds.getEast() + lngSpan],
-          ),
-        );
-      };
-
-      const frameMarkers = () => {
-        // Clear maxBounds first so fitBounds isn't clamped by a prior pass.
-        map.setMaxBounds(undefined as unknown as L.LatLngBounds);
-        map.fitBounds(markerBounds, { padding: [48, 48], maxZoom: 17 });
-        map.setMinZoom(Math.max(map.getZoom() - 1, 14));
-        updateMaxBounds();
-      };
-
-      map.on('zoomend', updateMaxBounds);
-      frameMarkers();
-
-      // Recalculate size once the container has laid out, then re-frame so the
-      // bounds reflect the real dimensions.
-      setTimeout(() => {
-        map.invalidateSize();
-        frameMarkers();
-      }, 0);
-    }
+    map.setView([CAMPUS_CENTER.latitude, CAMPUS_CENTER.longitude], 15);
 
     return () => {
       map.remove();
       mapRef.current = null;
       markersRef.current = {};
     };
-  }, [posts]);
+  }, []);
 
-  // Re-style markers when the selection changes.
+  // Keep markers in sync with the live post list.
   useEffect(() => {
-    posts.forEach((post) => {
-      markersRef.current[post.id]?.setIcon(letterIcon(post.letter, post.id === selectedId));
+    const map = mapRef.current;
+    if (!map) return;
+
+    const nextIds = new Set(posts.map((p) => p.id));
+
+    Object.entries(markersRef.current).forEach(([id, marker]) => {
+      if (!nextIds.has(id)) {
+        map.removeLayer(marker);
+        delete markersRef.current[id];
+      }
     });
+
+    posts.forEach((post) => {
+      const existing = markersRef.current[post.id];
+      if (existing) {
+        existing.setLatLng([post.lat, post.lng]);
+        existing.setIcon(letterIcon(post.letter, post.id === selectedId));
+        return;
+      }
+
+      const marker = L.marker([post.lat, post.lng], {
+        icon: letterIcon(post.letter, post.id === selectedId),
+      }).addTo(map);
+      marker.on('click', () => setSelectedId(post.id));
+      markersRef.current[post.id] = marker;
+    });
+
+    if (posts.length === 0) {
+      map.setMaxBounds(undefined as unknown as L.LatLngBounds);
+      map.setMinZoom(0);
+      map.setView([CAMPUS_CENTER.latitude, CAMPUS_CENTER.longitude], 15);
+      return;
+    }
+
+    const markerBounds = L.latLngBounds(posts.map((p) => [p.lat, p.lng] as [number, number]));
+
+    const updateMaxBounds = () => {
+      const view = map.getBounds();
+      const latSpan = view.getNorth() - view.getSouth();
+      const lngSpan = view.getEast() - view.getWest();
+      map.setMaxBounds(
+        L.latLngBounds(
+          [markerBounds.getSouth() - latSpan, markerBounds.getWest() - lngSpan],
+          [markerBounds.getNorth() + latSpan, markerBounds.getEast() + lngSpan],
+        ),
+      );
+    };
+
+    map.setMaxBounds(undefined as unknown as L.LatLngBounds);
+    map.fitBounds(markerBounds, { padding: [48, 48], maxZoom: 17 });
+    map.setMinZoom(Math.max(map.getZoom() - 1, 14));
+    updateMaxBounds();
+    map.off('zoomend');
+    map.on('zoomend', updateMaxBounds);
   }, [posts, selectedId]);
 
   return (
@@ -178,13 +168,10 @@ function Map() {
         bgcolor: figma.pageBg,
       }}
     >
-      <Typography
-        sx={{ fontSize: 28, color: figma.heading, px: 2, pt: 1.5, pb: 1 }}
-      >
+      <Typography sx={{ fontSize: 28, color: figma.heading, px: 2, pt: 1.5, pb: 1 }}>
         Food near campus
       </Typography>
 
-      {/* Scaled-down map */}
       <Box sx={{ px: 1.5 }}>
         <Box
           ref={containerRef}
@@ -201,13 +188,27 @@ function Map() {
         />
       </Box>
 
-      {/* Info blurbs */}
       <Box sx={{ px: 2, py: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        <Typography sx={{ fontSize: 18, color: figma.heading }}>
-          Markers · {posts.length} available {posts.length === 1 ? 'post' : 'posts'}
-        </Typography>
+        {loading && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+            <CircularProgress size={28} />
+          </Box>
+        )}
 
-        {/* Marker list */}
+        {!loading && error && <Alert severity="error">{error}</Alert>}
+
+        {!loading && !error && (
+          <Typography sx={{ fontSize: 18, color: figma.heading }}>
+            Markers · {posts.length} available {posts.length === 1 ? 'post' : 'posts'}
+          </Typography>
+        )}
+
+        {!loading && !error && posts.length === 0 && (
+          <Typography color="text.secondary">
+            No mapped food right now. New posts with a building pin will show up here.
+          </Typography>
+        )}
+
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
           {posts.map((p) => (
             <Box
@@ -247,7 +248,6 @@ function Map() {
           ))}
         </Box>
 
-        {/* Selected food detail card */}
         {selected && (
           <Box
             sx={{
@@ -260,7 +260,14 @@ function Map() {
               gap: '8px',
             }}
           >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 1 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'baseline',
+                gap: 1,
+              }}
+            >
               <Box component="span" sx={{ fontWeight: 600, fontSize: 16, color: figma.muted }}>
                 {CATEGORY_LABELS[selected.category]}
               </Box>
@@ -308,7 +315,6 @@ function Map() {
           </Box>
         )}
 
-        {/* Primary action */}
         <Button
           fullWidth
           disabled={!selected}

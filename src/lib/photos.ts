@@ -1,3 +1,4 @@
+import { ensureProfile } from './profiles';
 import { requireSupabase } from './supabase';
 
 const FOOD_PHOTOS_BUCKET = 'food-photos';
@@ -45,37 +46,15 @@ export async function compressPhoto(file: File): Promise<File> {
   }
 }
 
-async function ensureProfile(userId: string, email: string | undefined): Promise<void> {
-  if (!email) return;
-  const client = requireSupabase();
-  const { data } = await client.from('profiles').select('id').eq('id', userId).maybeSingle();
-  if (data) return;
-
-  const { error } = await client.from('profiles').insert({ id: userId, email });
-  // Another tab / the auth trigger may have created it first.
-  if (error && error.code !== '23505') {
-    throw new Error('Could not set up your profile for photo upload. Please try signing out and back in.');
-  }
-}
-
 /**
  * Upload a compressed food photo to the food-photos bucket.
  * Returns a public URL suitable for food_posts.photo_url.
  */
 export async function uploadFoodPhoto(file: File): Promise<string> {
+  const profile = await ensureProfile();
   const client = requireSupabase();
-  const {
-    data: { user },
-    error: userError,
-  } = await client.auth.getUser();
 
-  if (userError || !user) {
-    throw new Error('Sign in to upload a photo.');
-  }
-
-  await ensureProfile(user.id, user.email);
-
-  const path = `${user.id}/${crypto.randomUUID()}.jpg`;
+  const path = `${profile.id}/${crypto.randomUUID()}.jpg`;
   const body = file.type === 'image/jpeg' ? file : new File([file], 'food-photo.jpg', { type: 'image/jpeg' });
 
   const { error: uploadError } = await client.storage.from(FOOD_PHOTOS_BUCKET).upload(path, body, {

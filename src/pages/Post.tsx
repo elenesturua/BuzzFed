@@ -25,6 +25,7 @@ import {
 import type { FoodCategory, QuantityLevel, DietaryTag, NewFoodPost } from '../types';
 import { BUILDINGS, BUILDINGS_BY_NAME } from '../data/buildings';
 import PhotoPicker from '../components/PhotoPicker';
+import { createFoodPost } from '../lib/posts';
 import { uploadFoodPhoto } from '../lib/photos';
 
 const DURATION_OPTIONS = [
@@ -83,13 +84,13 @@ function Post() {
 
       const coords = BUILDINGS_BY_NAME[building];
       const newPost: NewFoodPost = {
-        title,
-        description: description || null,
+        title: title.trim(),
+        description: description.trim() || null,
         category,
         dietary_tags: dietaryTags,
         quantity,
         building,
-        location_details: locationDetails || null,
+        location_details: locationDetails.trim() || null,
         latitude: coords?.latitude ?? null,
         longitude: coords?.longitude ?? null,
         photo_url: photoUrl,
@@ -98,9 +99,8 @@ function Post() {
         expires_at: computeExpiresAt(),
       };
 
-      // Real insert lands with issue #8; keep the shaped payload for now.
-      console.log('New food post', newPost);
-      navigate('/feed');
+      const created = await createFoodPost(newPost);
+      navigate(`/post/${created.id}`, { replace: true });
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Could not post food. Please try again.');
     } finally {

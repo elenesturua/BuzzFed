@@ -1,9 +1,11 @@
-import { Container, Typography, Button, Box, Chip } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Alert, Box, Button, Chip, CircularProgress, Container, Typography } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate, useParams } from 'react-router-dom';
-import { PLACEHOLDER_FEED } from '../data/placeholderFeed';
-import { CATEGORY_LABELS, QUANTITY_LABELS, STATUS_LABELS, DIETARY_TAG_LABELS } from '../types';
 import FoodPhoto from '../components/FoodPhoto';
+import { fetchPostById, isPostActive, updatePostStatus } from '../lib/posts';
+import { CATEGORY_LABELS, QUANTITY_LABELS, STATUS_LABELS, DIETARY_TAG_LABELS } from '../types';
+import type { FoodPostWithEvent } from '../types';
 
 function formatTimeLeft(iso: string): string {
   const diffMs = new Date(iso).getTime() - Date.now();
@@ -26,7 +28,58 @@ function formatDateTime(iso: string): string {
 function PostDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const post = PLACEHOLDER_FEED.find((p) => p.id === id);
+  const [post, setPost] = useState<FoodPostWithEvent | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [markingGone, setMarkingGone] = useState(false);
+
+  useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      setPost(null);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    fetchPostById(id)
+      .then((next) => {
+        if (!cancelled) setPost(next);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Could not load this post.');
+          setPost(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  async function handleMarkGone() {
+    if (!post) return;
+    setActionError(null);
+    setMarkingGone(true);
+    try {
+      await updatePostStatus(post.id, 'gone');
+      setPost({ ...post, status: 'gone' });
+      navigate('/feed', { replace: true });
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Could not mark this post as gone.');
+    } finally {
+      setMarkingGone(false);
+    }
+  }
+
+  const active = post ? isPostActive(post) : false;
 
   return (
     <Container maxWidth="sm" sx={{ py: 2 }}>
@@ -34,15 +87,30 @@ function PostDetail() {
         Back
       </Button>
 
-      {!post ? (
-        <Typography>Post not found.</Typography>
-      ) : (
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+          <CircularProgress />
+        </Box>
+      )}
+
+      {!loading && error && <Alert severity="error">{error}</Alert>}
+
+      {!loading && !error && !post && <Typography>Post not found.</Typography>}
+
+      {!loading && post && (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           <FoodPhoto photoUrl={post.photo_url} title={post.title} height={260} />
           <Typography variant="h5" sx={{ fontWeight: 700 }}>
             {post.title}
           </Typography>
-          <Chip label={STATUS_LABELS[post.status]} sx={{ alignSelf: 'flex-start' }} />
+          <Chip
+            label={active ? STATUS_LABELS[post.status] : post.status === 'gone' ? 'Gone' : 'Expired'}
+            color={active ? (post.status === 'running_low' ? 'primary' : 'info') : 'default'}
+            sx={{ alignSelf: 'flex-start' }}
+          />
+          {!active && post.status !== 'gone' && (
+            <Alert severity="info">This listing has expired and no longer appears in the feed.</Alert>
+          )}
           {post.description && <Typography color="text.secondary">{post.description}</Typography>}
           <Typography>
             <strong>Where:</strong> {post.building}
@@ -80,6 +148,20 @@ function PostDetail() {
                 {formatDateTime(post.event.starts_at)} – {formatDateTime(post.event.ends_at)}
               </Typography>
             </Box>
+          )}
+
+          {actionError && <Alert severity="error">{actionError}</Alert>}
+
+          {active && (
+            <Button
+              variant="outlined"
+              color="error"
+              disabled={markingGone}
+              onClick={() => void handleMarkGone()}
+              sx={{ mt: 1, alignSelf: 'stretch' }}
+            >
+              {markingGone ? 'Updating…' : "Food's gone"}
+            </Button>
           )}
         </Box>
       )}
