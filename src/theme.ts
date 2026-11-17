@@ -64,18 +64,23 @@ const theme = createTheme({
           boxShadow: 'none',
           '&:hover': { boxShadow: 'none' },
         },
-        containedPrimary: {
-          backgroundColor: figma.brandBlue,
-          '&:hover': { backgroundColor: '#3b7fc4' },
+        contained: {
+          '&.MuiButton-containedPrimary': {
+            backgroundColor: figma.brandBlue,
+            color: '#ffffff',
+            '&:hover': { backgroundColor: '#3b7fc4' },
+          },
         },
-        outlinedPrimary: {
-          borderColor: figma.cardBorder,
-          color: figma.brandBlue,
-          borderWidth: 2,
-          '&:hover': {
+        outlined: {
+          '&.MuiButton-outlinedPrimary': {
+            borderColor: figma.cardBorder,
+            color: figma.brandBlue,
             borderWidth: 2,
-            borderColor: figma.brandBlue,
-            backgroundColor: figma.selectedBg,
+            '&:hover': {
+              borderWidth: 2,
+              borderColor: figma.brandBlue,
+              backgroundColor: figma.selectedBg,
+            },
           },
         },
       },
@@ -85,9 +90,11 @@ const theme = createTheme({
         root: {
           borderRadius: 6,
         },
-        filledPrimary: {
-          backgroundColor: figma.brandBlue,
-          color: '#ffffff',
+        filled: {
+          '&.MuiChip-colorPrimary': {
+            backgroundColor: figma.brandBlue,
+            color: '#ffffff',
+          },
         },
         outlined: {
           borderColor: figma.cardBorder,
