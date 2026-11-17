@@ -164,7 +164,7 @@ function Map() {
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        minHeight: 'calc(100vh - 56px)',
+        minHeight: 'calc(100dvh - 76px)',
         bgcolor: figma.pageBg,
       }}
     >

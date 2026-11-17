@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
-import NavBar from './components/NavBar';
+import NavBar, { NAV_HEIGHT_DESKTOP, NAV_HEIGHT_MOBILE } from './components/NavBar';
 import Login from './pages/Login';
 import Feed from './pages/Feed';
 import Post from './pages/Post';
@@ -25,7 +25,21 @@ function App() {
   }
 
   return (
-    <Box sx={{ pt: showNav ? '76px' : 0 }}>
+    <Box
+      sx={{
+        minHeight: '100dvh',
+        width: '100%',
+        maxWidth: '100%',
+        overflowX: 'hidden',
+        pt: showNav
+          ? {
+              xs: `calc(${NAV_HEIGHT_MOBILE}px + 4px + env(safe-area-inset-top))`,
+              sm: `calc(${NAV_HEIGHT_DESKTOP}px + 4px + env(safe-area-inset-top))`,
+            }
+          : 0,
+        pb: 'env(safe-area-inset-bottom)',
+      }}
+    >
       {showNav && <NavBar />}
       <Routes>
         <Route path="/" element={<Navigate to={isLoggedIn ? '/feed' : '/login'} replace />} />

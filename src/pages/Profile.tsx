@@ -56,12 +56,12 @@ function Profile() {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: 2 }}>
+    <Container maxWidth="sm" sx={{ py: 2, px: { xs: 2, sm: 3 }, pb: 4 }}>
       <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
         Profile
       </Typography>
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%', minWidth: 0 }}>
         <TextField
           label="Email"
           value={user?.email ?? PLACEHOLDER_PROFILE.email}
