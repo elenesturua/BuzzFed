@@ -15,8 +15,8 @@ export default defineConfig({
         name: 'BuzzFed',
         short_name: 'BuzzFed',
         description: 'Find free food around Georgia Tech.',
-        theme_color: '#003057', // GT Navy
-        background_color: '#003057',
+        theme_color: '#4a90d9',
+        background_color: '#ffffff',
         display: 'standalone',
         start_url: '/',
         scope: '/',

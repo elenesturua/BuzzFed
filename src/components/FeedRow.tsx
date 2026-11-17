@@ -7,9 +7,9 @@ import { CATEGORY_LABELS, QUANTITY_LABELS, STATUS_LABELS } from '../types';
 import type { PostStatus } from '../types';
 import FoodPhoto from './FoodPhoto';
 
-const STATUS_COLOR: Record<PostStatus, 'success' | 'warning' | 'default'> = {
-  available: 'success',
-  running_low: 'warning',
+const STATUS_COLOR: Record<PostStatus, 'info' | 'primary' | 'default'> = {
+  available: 'info',
+  running_low: 'primary',
   gone: 'default',
 };
 

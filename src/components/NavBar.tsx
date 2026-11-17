@@ -96,7 +96,7 @@ function NavBar() {
                       lineHeight: 'normal',
                       whiteSpace: 'nowrap',
                       fontWeight: active ? 600 : 400,
-                      color: active ? figma.heading : figma.ink,
+                      color: active ? figma.brandBlue : figma.ink,
                     }}
                   >
                     {item.label}
@@ -106,7 +106,7 @@ function NavBar() {
                       width: 28,
                       height: 2,
                       borderRadius: '1px',
-                      bgcolor: active ? figma.heading : 'transparent',
+                      bgcolor: active ? figma.brandBlue : 'transparent',
                     }}
                   />
                 </ButtonBase>
