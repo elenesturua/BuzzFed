@@ -21,6 +21,8 @@ export const PLACEHOLDER_FEED: FoodPostWithEvent[] = [
     expires_at: new Date(Date.now() + 2 * 3600_000).toISOString(),
     created_by: 'u1',
     created_at: new Date(Date.now() - 20 * 60_000).toISOString(),
+    gone_report_count: 0,
+    reported_gone_by_me: false,
     event: {
       id: 'e1',
       name: 'GDC Info Session',
@@ -51,6 +53,8 @@ export const PLACEHOLDER_FEED: FoodPostWithEvent[] = [
     expires_at: new Date(Date.now() + 45 * 60_000).toISOString(),
     created_by: 'u2',
     created_at: new Date(Date.now() - 35 * 60_000).toISOString(),
+    gone_report_count: 0,
+    reported_gone_by_me: false,
     event: null,
   },
   {
@@ -71,6 +75,8 @@ export const PLACEHOLDER_FEED: FoodPostWithEvent[] = [
     expires_at: new Date(Date.now() + 90 * 60_000).toISOString(),
     created_by: 'u3',
     created_at: new Date(Date.now() - 10 * 60_000).toISOString(),
+    gone_report_count: 0,
+    reported_gone_by_me: false,
     event: null,
   },
   {
@@ -91,6 +97,8 @@ export const PLACEHOLDER_FEED: FoodPostWithEvent[] = [
     expires_at: new Date(Date.now() + 3 * 3600_000).toISOString(),
     created_by: 'u4',
     created_at: new Date(Date.now() - 5 * 60_000).toISOString(),
+    gone_report_count: 0,
+    reported_gone_by_me: false,
     event: null,
   },
 ];

@@ -34,8 +34,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const subscription = supabase
       ? supabase.auth.onAuthStateChange((_event, session) => {
           if (cancelled) return;
-          const email = session?.user.email;
-          setUser(email ? { email } : null);
+          const nextUser = session?.user;
+          const email = nextUser?.email;
+          setUser(nextUser && email ? { id: nextUser.id, email } : null);
         }).data.subscription
       : null;
 

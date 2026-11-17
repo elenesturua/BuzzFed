@@ -84,7 +84,16 @@ export type FoodPost = {
 export type NewFoodPost = Omit<FoodPost, 'id' | 'status' | 'created_by' | 'created_at'>;
 
 // A food post joined with its event (from events), as shown in the feed.
-export type FoodPostWithEvent = FoodPost & { event: CampusEvent | null };
+export type FoodPostWithEvent = FoodPost & {
+  event: CampusEvent | null;
+  /** Soft "looks gone" reports from other students. */
+  gone_report_count: number;
+  /** True if the current user already filed a gone report. */
+  reported_gone_by_me: boolean;
+};
+
+/** Independent "looks gone" reports needed before the listing is taken down. */
+export const GONE_REPORT_THRESHOLD = 2;
 
 // Display text for each value in CATEGORIES.
 export const CATEGORY_LABELS: Record<FoodCategory, string> = {

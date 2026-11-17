@@ -6,6 +6,7 @@ import type { FoodPostWithEvent } from '../types';
 import { CATEGORY_LABELS, QUANTITY_LABELS, STATUS_LABELS } from '../types';
 import type { PostStatus } from '../types';
 import FoodPhoto from './FoodPhoto';
+import { isPossiblyGone } from '../lib/posts';
 
 const STATUS_COLOR: Record<PostStatus, 'info' | 'primary' | 'default'> = {
   available: 'info',
@@ -44,7 +45,7 @@ function FeedRow({ post }: Props) {
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, flexWrap: 'wrap' }}>
             <Typography variant="subtitle1" noWrap sx={{ fontWeight: 600 }}>
               {post.title}
             </Typography>
@@ -53,6 +54,9 @@ function FeedRow({ post }: Props) {
               label={STATUS_LABELS[post.status]}
               color={STATUS_COLOR[post.status]}
             />
+            {isPossiblyGone(post) && (
+              <Chip size="small" label="Possibly gone" color="warning" variant="outlined" />
+            )}
           </Box>
 
           <Box

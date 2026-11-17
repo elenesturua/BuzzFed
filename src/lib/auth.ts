@@ -1,6 +1,7 @@
 import { requireSupabase, supabase } from './supabase';
 
 export type AuthUser = {
+  id: string;
   email: string;
 };
 
@@ -55,9 +56,10 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   if (!supabase) return null;
 
   const { data, error } = await supabase.auth.getSession();
-  const email = data.session?.user.email;
-  if (error || !email) return null;
-  return { email };
+  const user = data.session?.user;
+  const email = user?.email;
+  if (error || !user || !email) return null;
+  return { id: user.id, email };
 }
 
 export async function signOut(): Promise<void> {
