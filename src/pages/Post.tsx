@@ -14,6 +14,8 @@ import {
   DEFAULT_POST_DURATION_HOURS,
 } from '../types';
 import type { FoodCategory, QuantityLevel, DietaryTag, NewFoodPost } from '../types';
+import EventPicker from '../components/EventPicker';
+import { mockEvents } from '../data/placeholderEvents';
 
 const DURATION_OPTIONS = [
   { value: 0.5, label: '30 minutes' },
@@ -38,6 +40,7 @@ function Post() {
   const [customEnd, setCustomEnd] = useState<Dayjs | null>(
     dayjs().add(DEFAULT_POST_DURATION_HOURS, 'hour'),
   );
+  const [selectedEventId, setSelectedEventId] = useState('');
 
   function toggleTag(tag: DietaryTag) {
     setDietaryTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
@@ -64,7 +67,7 @@ function Post() {
       latitude: null,
       longitude: null,
       photo_url: null,
-      event_id: null,
+      event_id: selectedEventId || null,
       ai_suggested: false,
       expires_at: computeExpiresAt(),
     };
@@ -190,6 +193,13 @@ function Post() {
             ))}
           </Box>
         </Box>
+
+        <EventPicker
+          events={mockEvents}
+          selectedEventId={selectedEventId}
+          onChange={setSelectedEventId}
+          onCreateEvent={() => alert('Create Event coming soon!')}
+        />
 
         <Button type="submit" variant="contained" disabled={!canSubmit}>
           Post food

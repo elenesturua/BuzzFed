@@ -9,6 +9,7 @@ import Map from './pages/Map';
 import Profile from './pages/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
 import { useAuth } from './lib/AuthContext';
+import EventPage from './pages/EventPage';
 
 function App() {
   const location = useLocation();
@@ -35,6 +36,7 @@ function App() {
           <Route path="/post/:id" element={<PostDetail />} />
           <Route path="/map" element={<Map />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/events/:id" element={<EventPage />} />
         </Route>
         <Route path="*" element={<Navigate to={isLoggedIn ? '/feed' : '/login'} replace />} />
       </Routes>
