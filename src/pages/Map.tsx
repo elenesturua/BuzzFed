@@ -5,9 +5,13 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { PLACEHOLDER_FEED } from '../data/placeholderFeed';
 import { CAMPUS_CENTER } from '../data/buildings';
-import { CATEGORY_LABELS, QUANTITY_LABELS, DIETARY_TAG_LABELS } from '../types';
+import {
+  CATEGORY_LABELS,
+  QUANTITY_LABELS,
+  DIETARY_TAG_LABELS,
+} from '../types';
 import type { FoodPostWithEvent } from '../types';
-import { figma } from '../theme';
+import { figma, fontStack } from '../theme';
 
 // A post that is shown on the map: active and has coordinates. The letter
 // (A, B, C, …) is assigned in list order and used on both the pin and the
@@ -34,7 +38,7 @@ function letterIcon(letter: string, selected: boolean): L.DivIcon {
       width:26px;height:26px;border-radius:50%;
       display:flex;align-items:center;justify-content:center;
       background:${selected ? figma.markerSelected : figma.marker};color:#fff;
-      font-weight:600;font-size:14px;font-family:${figma.bodyFont};
+      font-weight:600;font-size:14px;font-family:${fontStack};
       border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.4);
     ">${letter}</div>`,
     iconSize: [26, 26],
@@ -87,19 +91,6 @@ function Map() {
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Record<string, L.Marker>>({});
 
-  // Load the Figma fonts (Anaheim for body, Offside for headings) on demand,
-  // scoped to this page so no shared file (index.html) is touched. Guarded so
-  // it is only injected once.
-  useEffect(() => {
-    const id = 'map-figma-fonts';
-    if (document.getElementById(id)) return;
-    const link = document.createElement('link');
-    link.id = id;
-    link.rel = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=Anaheim&family=Offside&display=swap';
-    document.head.appendChild(link);
-  }, []);
-
   // Initialize the Leaflet map once. Markers start unselected; the styling
   // effect below immediately applies the current selection.
   useEffect(() => {
@@ -124,7 +115,9 @@ function Map() {
     if (posts.length === 0) {
       map.setView([CAMPUS_CENTER.latitude, CAMPUS_CENTER.longitude], 15);
     } else {
-      const markerBounds = L.latLngBounds(posts.map((p) => [p.lat, p.lng] as [number, number]));
+      const markerBounds = L.latLngBounds(
+        posts.map((p) => [p.lat, p.lng] as [number, number]),
+      );
 
       // Panning is allowed until only one marker stays on screen: extend the
       // marker bounds by about one viewport span on each side. This is
@@ -183,18 +176,10 @@ function Map() {
         flexDirection: 'column',
         minHeight: 'calc(100vh - 56px)',
         bgcolor: figma.pageBg,
-        fontFamily: figma.bodyFont,
       }}
     >
       <Typography
-        sx={{
-          fontFamily: figma.headFont,
-          fontSize: 28,
-          color: figma.heading,
-          px: 2,
-          pt: 1.5,
-          pb: 1,
-        }}
+        sx={{ fontSize: 28, color: figma.heading, px: 2, pt: 1.5, pb: 1 }}
       >
         Food near campus
       </Typography>
@@ -218,7 +203,7 @@ function Map() {
 
       {/* Info blurbs */}
       <Box sx={{ px: 2, py: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        <Typography sx={{ fontFamily: figma.headFont, fontSize: 18, color: figma.heading }}>
+        <Typography sx={{ fontSize: 18, color: figma.heading }}>
           Markers · {posts.length} available {posts.length === 1 ? 'post' : 'posts'}
         </Typography>
 
@@ -251,20 +236,11 @@ function Map() {
             >
               <Box
                 component="span"
-                sx={{
-                  fontFamily: figma.bodyFont,
-                  fontWeight: 600,
-                  fontSize: 16,
-                  color: figma.ink,
-                  minWidth: 16,
-                }}
+                sx={{ fontWeight: 600, fontSize: 16, color: figma.ink, minWidth: 16 }}
               >
                 {p.letter}
               </Box>
-              <Box
-                component="span"
-                sx={{ fontFamily: figma.bodyFont, fontSize: 16, color: figma.ink }}
-              >
+              <Box component="span" sx={{ fontSize: 16, color: figma.ink }}>
                 {p.building} · {postSummary(p)}
               </Box>
             </Box>
@@ -284,53 +260,26 @@ function Map() {
               gap: '8px',
             }}
           >
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-                gap: 1,
-              }}
-            >
-              <Box
-                component="span"
-                sx={{
-                  fontFamily: figma.bodyFont,
-                  fontWeight: 600,
-                  fontSize: 16,
-                  color: figma.muted,
-                }}
-              >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 1 }}>
+              <Box component="span" sx={{ fontWeight: 600, fontSize: 16, color: figma.muted }}>
                 {CATEGORY_LABELS[selected.category]}
               </Box>
-              <Box
-                component="span"
-                sx={{ fontFamily: figma.bodyFont, fontWeight: 600, fontSize: 16, color: figma.ink }}
-              >
+              <Box component="span" sx={{ fontWeight: 600, fontSize: 16, color: figma.ink }}>
                 {timeLeft(selected.expires_at)} · until {untilTime(selected.expires_at)}
               </Box>
             </Box>
 
-            <Box
-              component="span"
-              sx={{ fontFamily: figma.headFont, fontSize: 17, color: figma.heading }}
-            >
+            <Box component="span" sx={{ fontSize: 17, color: figma.heading }}>
               {selected.title}
             </Box>
 
-            <Box
-              component="span"
-              sx={{ fontFamily: figma.bodyFont, fontSize: 16, color: figma.ink }}
-            >
+            <Box component="span" sx={{ fontSize: 16, color: figma.ink }}>
               {selected.building}
               {selected.location_details ? ` · ${selected.location_details}` : ''}
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              <Box
-                component="span"
-                sx={{ fontFamily: figma.bodyFont, fontSize: 16, color: figma.ink }}
-              >
+              <Box component="span" sx={{ fontSize: 16, color: figma.ink }}>
                 {QUANTITY_LABELS[selected.quantity]}
               </Box>
               {selected.dietary_tags.map((tag) => (
@@ -338,7 +287,6 @@ function Map() {
                   key={tag}
                   component="span"
                   sx={{
-                    fontFamily: figma.bodyFont,
                     fontSize: 16,
                     color: figma.muted,
                     bgcolor: figma.buttonBg,
@@ -353,10 +301,7 @@ function Map() {
             </Box>
 
             {selected.event && (
-              <Box
-                component="span"
-                sx={{ fontFamily: figma.bodyFont, fontSize: 16, color: figma.muted }}
-              >
+              <Box component="span" sx={{ fontSize: 16, color: figma.muted }}>
                 Event: {selected.event.name} →
               </Box>
             )}
@@ -370,7 +315,6 @@ function Map() {
           onClick={() => selected && navigate(`/post/${selected.id}`)}
           disableElevation
           sx={{
-            fontFamily: figma.headFont,
             textTransform: 'none',
             fontSize: 16,
             color: figma.heading,
